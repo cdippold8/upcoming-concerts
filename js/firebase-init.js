@@ -3,7 +3,7 @@
 // window; `auth`/`db` declared here are globals, same as CONCERTS in data.js,
 // since every script on this page is a plain non-module <script> tag.
 const firebaseConfig = {
-  apiKey: "AIzaSyB3•••••••••••••••••••••••••••••••",
+  apiKey: "AIzaSyB3r3Wp-tRBwiUq9Y062g2fPwA5dk_wGXU",
   authDomain: "upcoming-concerts-ce28d.firebaseapp.com",
   projectId: "upcoming-concerts-ce28d",
   storageBucket: "upcoming-concerts-ce28d.firebasestorage.app",
