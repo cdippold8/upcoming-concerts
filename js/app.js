@@ -434,10 +434,15 @@
     signInBtn.addEventListener("click", () => {
       authError.hidden = true;
       const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch((err) => {
-        authError.textContent = `Sign-in failed: ${err.message}`;
-        authError.hidden = false;
-      });
+      auth.signInWithRedirect(provider);
+    });
+
+    // Completes the sign-in after Google redirects back here (signInWithRedirect
+    // navigates away and back, unlike the popup flow it replaces, so errors
+    // surface here instead of at the signInBtn click).
+    auth.getRedirectResult().catch((err) => {
+      authError.textContent = `Sign-in failed: ${err.message}`;
+      authError.hidden = false;
     });
 
     signOutBtn.addEventListener("click", () => auth.signOut());
