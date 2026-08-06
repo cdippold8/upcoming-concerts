@@ -415,3 +415,56 @@ body {
     margin-left: 68px;
   }
 }
+
+.auth-gate {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.auth-card {
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 36px 28px;
+}
+
+.auth-card .brand-mark {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.auth-card h1 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.auth-status {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0 0 20px;
+}
+
+.auth-error {
+  color: var(--badge-text);
+  font-size: 13px;
+  margin: 14px 0 0;
+}
+
+.ghost-btn {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  font-size: inherit;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}

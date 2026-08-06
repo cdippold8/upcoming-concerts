@@ -1,11 +1,17 @@
 (function () {
   const DEFAULT_TIME_ZONE = "America/Los_Angeles"; // used for baked-in data and the manual-add form
-  const MANUAL_STORAGE_KEY = "concerts.manual.v1";
-  const TM_KEY_STORAGE_KEY = "concerts.tmApiKey.v1";
+  const STATE_DOC = db.collection("appData").doc("state");
   const MONTH_NAMES = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
   ];
+
+  // In-memory cache kept in sync with Firestore via onSnapshot below —
+  // this is the single source of truth for manual/searched concerts and
+  // the Ticketmaster API key, replacing the old localStorage-backed copy.
+  let manualConcerts = [];
+  let apiKeyValue = "";
+  let listenerAttached = false;
 
   // Extracts a date's local date/time parts in a given IANA time zone,
   // independent of the viewer's own browser timezone.
@@ -72,46 +78,60 @@
     return div.innerHTML;
   }
 
-  function loadManualConcerts() {
-    try {
-      const raw = localStorage.getItem(MANUAL_STORAGE_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) {
-      return [];
-    }
-  }
+  // --- Firestore-backed state -----------------------------------------------
+  // Manual/searched concerts and the Ticketmaster API key live in a single
+  // doc (appData/state) so they sync across every signed-in device.
 
-  function saveManualConcerts(list) {
-    localStorage.setItem(MANUAL_STORAGE_KEY, JSON.stringify(list));
+  function loadManualConcerts() {
+    return manualConcerts;
   }
 
   function addManualConcert(concert) {
-    const list = loadManualConcerts();
-    list.push(concert);
-    saveManualConcerts(list);
+    STATE_DOC.set({ concerts: firebase.firestore.FieldValue.arrayUnion(concert) }, { merge: true }).catch((err) => {
+      console.error("Failed to add concert:", err);
+    });
   }
 
   function removeManualConcert(id) {
-    saveManualConcerts(loadManualConcerts().filter((c) => c.id !== id));
-    render();
+    const concert = manualConcerts.find((c) => c.id === id);
+    if (!concert) return;
+    STATE_DOC.set({ concerts: firebase.firestore.FieldValue.arrayRemove(concert) }, { merge: true }).catch((err) => {
+      console.error("Failed to remove concert:", err);
+    });
   }
 
   function loadApiKey() {
-    try {
-      return localStorage.getItem(TM_KEY_STORAGE_KEY) || "";
-    } catch (e) {
-      return "";
-    }
+    return apiKeyValue;
   }
 
   function saveApiKey(key) {
-    try {
-      if (key) localStorage.setItem(TM_KEY_STORAGE_KEY, key);
-      else localStorage.removeItem(TM_KEY_STORAGE_KEY);
-    } catch (e) {
-      // localStorage unavailable (private browsing, storage disabled, etc.) —
-      // the key just won't persist between visits.
-    }
+    STATE_DOC.set({ apiKey: key }, { merge: true }).catch((err) => {
+      console.error("Failed to save API key:", err);
+    });
+  }
+
+  // Subscribes to the shared state doc; safe to call more than once thanks
+  // to the listenerAttached guard, since onAuthStateChanged can fire again
+  // (e.g. token refresh) without the user signing out and back in.
+  function attachDataListener() {
+    if (listenerAttached) return;
+    listenerAttached = true;
+
+    STATE_DOC.onSnapshot(
+      (doc) => {
+        const data = doc.data() || {};
+        manualConcerts = data.concerts || [];
+        apiKeyValue = data.apiKey || "";
+
+        const keyInput = document.getElementById("tmApiKey");
+        if (keyInput && document.activeElement !== keyInput) keyInput.value = apiKeyValue;
+
+        render();
+      },
+      (err) => {
+        console.error("Firestore listener error:", err);
+      }
+    );
   }
 
   // A rough "already on the list" key so re-adding the same search result
@@ -251,7 +271,6 @@
       form.reset();
       form.hidden = true;
       toggle.textContent = "+ Add manually";
-      render();
     });
   }
 
@@ -329,7 +348,6 @@
           });
           btn.textContent = "Added";
           btn.disabled = true;
-          render();
         });
       }
 
@@ -403,6 +421,41 @@
     }
   }
 
+  // --- Auth gate --------------------------------------------------------
+
+  function setupAuth() {
+    const authGate = document.getElementById("authGate");
+    const appContent = document.getElementById("appContent");
+    const signInBtn = document.getElementById("signInBtn");
+    const signOutBtn = document.getElementById("signOutBtn");
+    const authError = document.getElementById("authError");
+    const userEmail = document.getElementById("userEmail");
+
+    signInBtn.addEventListener("click", () => {
+      authError.hidden = true;
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch((err) => {
+        authError.textContent = `Sign-in failed: ${err.message}`;
+        authError.hidden = false;
+      });
+    });
+
+    signOutBtn.addEventListener("click", () => auth.signOut());
+
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        authGate.hidden = true;
+        appContent.hidden = false;
+        userEmail.textContent = user.email || "";
+        attachDataListener();
+      } else {
+        authGate.hidden = false;
+        appContent.hidden = true;
+      }
+    });
+  }
+
+  setupAuth();
   setupAddForm();
   setupSearch();
   render();

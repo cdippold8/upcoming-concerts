@@ -16,73 +16,92 @@
 <body>
 <div id="page">
 
-  <header class="page-header">
-    <div class="brand">
+  <div class="auth-gate" id="authGate">
+    <div class="auth-card">
       <span class="brand-mark">&#9835;</span>
-      <div>
-        <h1>Upcoming Concerts</h1>
-        <p class="tagline" id="summary">Loading&hellip;</p>
-      </div>
+      <h1>Upcoming Concerts</h1>
+      <p class="auth-status" id="authStatus">Sign in with your Google account to see and manage the list.</p>
+      <button type="button" class="add-submit" id="signInBtn">Sign in with Google</button>
+      <p class="auth-error" id="authError" hidden></p>
     </div>
-    <div class="header-actions">
-      <button type="button" class="add-toggle" id="searchToggle">Search shows</button>
-      <button type="button" class="add-toggle" id="addToggle">+ Add manually</button>
-    </div>
-  </header>
-
-  <div class="add-form" id="searchPanel" hidden>
-    <div class="add-form-row">
-      <label>Ticketmaster API key <span class="optional">(free — <a href="https://developer.ticketmaster.com/products-and-docs/apis/getting-started/" target="_blank" rel="noopener">get one here</a>, saved in this browser only)</span>
-        <input type="password" id="tmApiKey" placeholder="Paste your Consumer Key" autocomplete="off" />
-      </label>
-    </div>
-    <div class="add-form-row search-row">
-      <input type="text" id="searchQuery" placeholder="Artist or show (optional if searching by city)" />
-      <input type="text" id="searchCity" placeholder="City, e.g. Portland" />
-      <button type="button" class="add-submit" id="searchBtn">Search</button>
-    </div>
-    <div id="searchResults" class="search-results"></div>
   </div>
 
-  <form class="add-form" id="addForm" hidden>
-    <div class="add-form-row">
-      <label>Artist / show
-        <input type="text" id="fieldArtist" required placeholder="e.g. Japanese Breakfast" />
-      </label>
-    </div>
-    <div class="add-form-row add-form-row-split">
-      <label>Date
-        <input type="date" id="fieldDate" required />
-      </label>
-      <label>Time
-        <input type="time" id="fieldTime" required />
-      </label>
-    </div>
-    <div class="add-form-row">
-      <label>Venue
-        <input type="text" id="fieldVenue" required placeholder="e.g. Roseland Theater" />
-      </label>
-    </div>
-    <div class="add-form-row">
-      <label>Address <span class="optional">(optional)</span>
-        <input type="text" id="fieldAddress" placeholder="e.g. 8 Northwest 6th Avenue, Portland, OR" />
-      </label>
-    </div>
-    <p class="add-form-hint">Times are entered in Pacific time (the time zone all the venues above are in).</p>
-    <div class="add-form-actions">
-      <button type="submit" class="add-submit">Add to list</button>
-      <button type="button" class="add-cancel" id="addCancel">Cancel</button>
-    </div>
-  </form>
+  <div id="appContent" hidden>
 
-  <main id="app"></main>
+    <header class="page-header">
+      <div class="brand">
+        <span class="brand-mark">&#9835;</span>
+        <div>
+          <h1>Upcoming Concerts</h1>
+          <p class="tagline" id="summary">Loading&hellip;</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="add-toggle" id="searchToggle">Search shows</button>
+        <button type="button" class="add-toggle" id="addToggle">+ Add manually</button>
+      </div>
+    </header>
 
-  <footer class="page-footer">
-    <p>Built from confirmed ticket purchases (Etix order confirmations) and calendar invites found in Gmail &amp; Google Calendar, plus anything found via search or added manually above. Marketing emails and onsale alerts aren't included. See <code>README.md</code> for how to refresh this list.</p>
-  </footer>
+    <div class="add-form" id="searchPanel" hidden>
+      <div class="add-form-row">
+        <label>Ticketmaster API key <span class="optional">(free — <a href="https://developer.ticketmaster.com/products-and-docs/apis/getting-started/" target="_blank" rel="noopener">get one here</a>, synced to your account)</span>
+          <input type="password" id="tmApiKey" placeholder="Paste your Consumer Key" autocomplete="off" />
+        </label>
+      </div>
+      <div class="add-form-row search-row">
+        <input type="text" id="searchQuery" placeholder="Artist or show (optional if searching by city)" />
+        <input type="text" id="searchCity" placeholder="City, e.g. Portland" />
+        <button type="button" class="add-submit" id="searchBtn">Search</button>
+      </div>
+      <div id="searchResults" class="search-results"></div>
+    </div>
+
+    <form class="add-form" id="addForm" hidden>
+      <div class="add-form-row">
+        <label>Artist / show
+          <input type="text" id="fieldArtist" required placeholder="e.g. Japanese Breakfast" />
+        </label>
+      </div>
+      <div class="add-form-row add-form-row-split">
+        <label>Date
+          <input type="date" id="fieldDate" required />
+        </label>
+        <label>Time
+          <input type="time" id="fieldTime" required />
+        </label>
+      </div>
+      <div class="add-form-row">
+        <label>Venue
+          <input type="text" id="fieldVenue" required placeholder="e.g. Roseland Theater" />
+        </label>
+      </div>
+      <div class="add-form-row">
+        <label>Address <span class="optional">(optional)</span>
+          <input type="text" id="fieldAddress" placeholder="e.g. 8 Northwest 6th Avenue, Portland, OR" />
+        </label>
+      </div>
+      <p class="add-form-hint">Times are entered in Pacific time (the time zone all the venues above are in).</p>
+      <div class="add-form-actions">
+        <button type="submit" class="add-submit">Add to list</button>
+        <button type="button" class="add-cancel" id="addCancel">Cancel</button>
+      </div>
+    </form>
+
+    <main id="app"></main>
+
+    <footer class="page-footer">
+      <p>Built from confirmed ticket purchases (Etix order confirmations) and calendar invites found in Gmail &amp; Google Calendar, plus anything found via search or added manually above. Marketing emails and onsale alerts aren't included. See <code>README.md</code> for how to refresh this list.</p>
+      <p>Signed in as <span id="userEmail"></span> &middot; <button type="button" class="ghost-btn" id="signOutBtn">Sign out</button></p>
+    </footer>
+
+  </div>
 
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-init.js"></script>
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 </body>
