@@ -424,6 +424,10 @@ body {
   padding: 20px;
 }
 
+.auth-gate[hidden] {
+  display: none;
+}
+
 .auth-card {
   max-width: 360px;
   width: 100%;
