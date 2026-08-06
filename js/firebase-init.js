@@ -4,7 +4,7 @@
 // since every script on this page is a plain non-module <script> tag.
 const firebaseConfig = {
   apiKey: "AIzaSyB3r3Wp-tRBwiUq9Y062g2fPwA5dk_wGXU",
-  authDomain: "upcoming-concerts-ce28d.firebaseapp.com",
+  authDomain: "auth.christinedippold.com",
   projectId: "upcoming-concerts-ce28d",
   storageBucket: "upcoming-concerts-ce28d.firebasestorage.app",
   messagingSenderId: "63994004518",
