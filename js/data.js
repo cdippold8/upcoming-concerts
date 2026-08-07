@@ -7,6 +7,13 @@
 
 const CONCERTS = [
   {
+    artist: "Joe Russo's Almost Dead",
+    date: "2026-08-13T18:00:00-07:00",
+    venue: "Pioneer Courthouse Square",
+    address: "701 Southwest 6th Avenue, Portland, OR",
+    source: "Etix purchase (Order #464628004)",
+  },
+  {
     artist: "The Breeders",
     date: "2026-08-18T19:00:00-07:00",
     venue: "Pioneer Courthouse Square",
