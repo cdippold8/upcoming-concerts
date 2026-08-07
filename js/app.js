@@ -1,6 +1,10 @@
 (function () {
   const DEFAULT_TIME_ZONE = "America/Los_Angeles"; // used for baked-in data and the manual-add form
+  // appData/state holds only `concerts` and is publicly readable (see
+  // share.html) — the Ticketmaster API key must never live there, so it
+  // gets its own owner-only doc.
   const STATE_DOC = db.collection("appData").doc("state");
+  const PRIVATE_DOC = db.collection("appData").doc("private");
   const MONTH_NAMES = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December",
@@ -105,14 +109,14 @@
   }
 
   function saveApiKey(key) {
-    STATE_DOC.set({ apiKey: key }, { merge: true }).catch((err) => {
+    PRIVATE_DOC.set({ apiKey: key }, { merge: true }).catch((err) => {
       console.error("Failed to save API key:", err);
     });
   }
 
-  // Subscribes to the shared state doc; safe to call more than once thanks
-  // to the listenerAttached guard, since onAuthStateChanged can fire again
-  // (e.g. token refresh) without the user signing out and back in.
+  // Subscribes to the state docs; safe to call more than once thanks to the
+  // listenerAttached guard, since onAuthStateChanged can fire again (e.g.
+  // token refresh) without the user signing out and back in.
   function attachDataListener() {
     if (listenerAttached) return;
     listenerAttached = true;
@@ -121,12 +125,28 @@
       (doc) => {
         const data = doc.data() || {};
         manualConcerts = data.concerts || [];
+        render();
+
+        // One-time migration: the API key used to live in this doc, back
+        // before it was made publicly readable for share.html.
+        if (data.apiKey) {
+          PRIVATE_DOC.set({ apiKey: data.apiKey }, { merge: true })
+            .then(() => STATE_DOC.update({ apiKey: firebase.firestore.FieldValue.delete() }))
+            .catch((err) => console.error("Failed to migrate API key:", err));
+        }
+      },
+      (err) => {
+        console.error("Firestore listener error:", err);
+      }
+    );
+
+    PRIVATE_DOC.onSnapshot(
+      (doc) => {
+        const data = doc.data() || {};
         apiKeyValue = data.apiKey || "";
 
         const keyInput = document.getElementById("tmApiKey");
         if (keyInput && document.activeElement !== keyInput) keyInput.value = apiKeyValue;
-
-        render();
       },
       (err) => {
         console.error("Firestore listener error:", err);
@@ -303,7 +323,7 @@
     };
   }
 
-  function renderSearchResults(container, events) {
+  function renderSearchResults(container, events, panel, toggle) {
     if (events.length === 0) {
       container.innerHTML = '<p class="search-status">No shows found for that search.</p>';
       return;
@@ -346,8 +366,9 @@
             timeZone: r.timeZone,
             source: hasTime ? "Found via Ticketmaster search" : "Found via Ticketmaster search (time TBA)",
           });
-          btn.textContent = "Added";
-          btn.disabled = true;
+          panel.hidden = true;
+          toggle.textContent = "Search shows";
+          showToast("Fuck yeah! Show added!");
         });
       }
 
@@ -355,7 +376,7 @@
     }
   }
 
-  async function runSearch(query, city, container) {
+  async function runSearch(query, city, container, panel, toggle) {
     const key = loadApiKey();
     if (!key) {
       container.innerHTML = '<p class="search-status">Add your free Ticketmaster API key above first.</p>';
@@ -381,7 +402,7 @@
       }
       const data = await res.json();
       const events = (data._embedded && data._embedded.events) || [];
-      renderSearchResults(container, events);
+      renderSearchResults(container, events, panel, toggle);
     } catch (err) {
       container.innerHTML =
         '<p class="search-status search-status-error">Couldn&rsquo;t reach Ticketmaster. Your browser or network may be blocking the request — try again in a moment.</p>';
@@ -409,7 +430,7 @@
     // e.g. if the user pastes it and immediately hits Enter to search.
     keyInput.addEventListener("input", () => saveApiKey(keyInput.value.trim()));
 
-    const doSearch = () => runSearch(queryInput.value.trim(), cityInput.value.trim(), results);
+    const doSearch = () => runSearch(queryInput.value.trim(), cityInput.value.trim(), results, panel, toggle);
     searchBtn.addEventListener("click", doSearch);
     for (const input of [queryInput, cityInput]) {
       input.addEventListener("keydown", (e) => {
@@ -419,6 +440,25 @@
         }
       });
     }
+  }
+
+  // --- Toast ------------------------------------------------------------
+
+  let toastTimer = null;
+
+  function showToast(message) {
+    const toast = document.getElementById("toast");
+    document.getElementById("toastMessage").textContent = message;
+    toast.classList.add("toast-visible");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("toast-visible"), 3000);
+  }
+
+  function setupToast() {
+    document.getElementById("toastClose").addEventListener("click", () => {
+      document.getElementById("toast").classList.remove("toast-visible");
+      clearTimeout(toastTimer);
+    });
   }
 
   // --- Auth gate --------------------------------------------------------
@@ -478,5 +518,6 @@
   setupAuth();
   setupAddForm();
   setupSearch();
+  setupToast();
   render();
 })();

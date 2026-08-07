@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Christine's Upcoming Concerts</title>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<meta name="theme-color" content="#5b3fa6" />
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+<div id="page">
+
+  <header class="page-header">
+    <div class="brand">
+      <span class="brand-mark">&#9835;</span>
+      <div>
+        <h1>Christine's Upcoming Concerts</h1>
+        <p class="tagline" id="summary">Loading&hellip;</p>
+      </div>
+    </div>
+  </header>
+
+  <main id="app"></main>
+
+  <footer class="page-footer">
+    <p>A read-only view of what Christine's going to see next, shared from her <a href="index.html">Upcoming Concerts</a> app.</p>
+  </footer>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-init.js"></script>
+<script src="js/data.js"></script>
+<script src="js/share.js"></script>
+</body>
+</html>
