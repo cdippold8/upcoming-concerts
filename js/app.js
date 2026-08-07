@@ -423,6 +423,14 @@
 
   // --- Auth gate --------------------------------------------------------
 
+  // All iOS browsers (Chrome included) run on WebKit, which doesn't reliably
+  // keep signInWithRedirect's sessionStorage marker across the full-page
+  // round trip to Google and back — the sign-in silently fails to complete.
+  // Popup avoids that by never leaving the page, so use it there instead.
+  function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  }
+
   function setupAuth() {
     const authGate = document.getElementById("authGate");
     const appContent = document.getElementById("appContent");
@@ -434,7 +442,14 @@
     signInBtn.addEventListener("click", () => {
       authError.hidden = true;
       const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithRedirect(provider);
+      if (isIOS()) {
+        auth.signInWithPopup(provider).catch((err) => {
+          authError.textContent = `Sign-in failed: ${err.message}`;
+          authError.hidden = false;
+        });
+      } else {
+        auth.signInWithRedirect(provider);
+      }
     });
 
     // Completes the sign-in after Google redirects back here (signInWithRedirect
