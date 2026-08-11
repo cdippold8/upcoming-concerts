@@ -48,4 +48,11 @@ const CONCERTS = [
     address: "3017 Southeast Milwaukie Avenue, Portland, OR",
     source: "Etix purchase (Order #452457296)",
   },
+  {
+    artist: "Iceage",
+    date: "2027-04-03T20:00:00-07:00",
+    venue: "Aladdin Theater",
+    address: "3017 Southeast Milwaukie Avenue, Portland, OR",
+    source: "Etix purchase (Order #465444584)",
+  },
 ];
