@@ -524,3 +524,124 @@ body {
 .toast-close:hover {
   opacity: 1;
 }
+
+/* --- Who's going ------------------------------------------------------- */
+
+.attendance {
+  margin-top: 10px;
+}
+
+.attendance-toggle {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.attendance-panel {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.attendance-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.attendance-person {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 14px;
+}
+
+.attendance-name {
+  font-weight: 600;
+  min-width: 80px;
+  overflow-wrap: anywhere;
+}
+
+.attendance-paid {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.attendance-buyer-tag {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--badge-text);
+  background: var(--badge-bg);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.attendance-remove {
+  margin-left: auto;
+  width: 20px;
+  height: 20px;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.attendance-remove:hover {
+  color: var(--badge-text);
+  border-color: var(--badge-text);
+}
+
+.attendance-buyer {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.attendance-buyer select {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 8px;
+  margin-left: 4px;
+}
+
+.attendance-add {
+  display: flex;
+  gap: 8px;
+}
+
+.attendance-add input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+}

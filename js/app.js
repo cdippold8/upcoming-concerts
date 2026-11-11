@@ -15,6 +15,13 @@
   // the Ticketmaster API key, replacing the old localStorage-backed copy.
   let manualConcerts = [];
   let apiKeyValue = "";
+  // "Who's going" data, keyed by attendanceKey(concert). Lives in the
+  // signed-in-only appData/private doc so names and who-owes-whom never
+  // reach the public share page.
+  let attendance = {};
+  // Which cards have their "Who's going" panel expanded. Local UI state only,
+  // kept across re-renders so a Firestore update doesn't collapse the panel.
+  const openAttendance = new Set();
   let listenerAttached = false;
 
   // Extracts a date's local date/time parts in a given IANA time zone,
@@ -104,6 +111,33 @@
     });
   }
 
+  // Baked-in concerts have no id, so fall back to the same date|venue key
+  // used for de-duping search results.
+  function attendanceKey(c) {
+    return c.id || `baked:${dedupeKey(c)}`;
+  }
+
+  function getAttendance(c) {
+    const entry = attendance[attendanceKey(c)] || {};
+    return {
+      people: Array.isArray(entry.people) ? entry.people : [],
+      buyer: entry.buyer || "me",
+      mePaid: Boolean(entry.mePaid),
+    };
+  }
+
+  // Writes one concert's whole entry. With merge, the other concerts'
+  // entries are left alone, and this entry's `people` array is replaced
+  // wholesale (arrays aren't merged), which is what we want.
+  function saveAttendance(c, entry) {
+    const key = attendanceKey(c);
+    attendance = { ...attendance, [key]: entry };
+    render();
+    PRIVATE_DOC.set({ attendance: { [key]: entry } }, { merge: true }).catch((err) => {
+      console.error("Failed to save attendees:", err);
+    });
+  }
+
   function loadApiKey() {
     return apiKeyValue;
   }
@@ -144,6 +178,8 @@
       (doc) => {
         const data = doc.data() || {};
         apiKeyValue = data.apiKey || "";
+        attendance = data.attendance || {};
+        render();
 
         const keyInput = document.getElementById("tmApiKey");
         if (keyInput && document.activeElement !== keyInput) keyInput.value = apiKeyValue;
@@ -230,6 +266,7 @@
             </div>
             ${c.address ? `<div class="concert-address">${escapeHtml(c.address)}</div>` : ""}
             <div class="concert-source">${escapeHtml(c.source)}</div>
+            <div class="attendance"></div>
           </div>
           ${badge ? `<div class="concert-badge">${badge}</div>` : ""}
           ${isManual ? '<button type="button" class="concert-remove" title="Remove">&times;</button>' : ""}
@@ -239,12 +276,150 @@
           card.querySelector(".concert-remove").addEventListener("click", () => removeManualConcert(c.id));
         }
 
+        renderAttendance(card.querySelector(".attendance"), c);
         list.appendChild(card);
       }
 
       section.appendChild(list);
       root.appendChild(section);
     }
+  }
+
+  // --- Who's going ------------------------------------------------------
+  // Per concert: who's coming, who bought the tickets (you or one of them),
+  // and which non-buyers have paid the buyer back.
+
+  function attendanceSummary(entry) {
+    const going = entry.people.length + 1; // +1 for you
+    const owing = [
+      ...(entry.buyer === "me" ? [] : [{ paid: entry.mePaid }]),
+      ...entry.people.filter((p) => p.name !== entry.buyer),
+    ].filter((p) => !p.paid).length;
+    if (entry.people.length === 0) return "Who\u2019s going";
+    return `Who\u2019s going \u00b7 ${going}${owing ? ` \u00b7 ${owing} owe${owing === 1 ? "s" : ""}` : " \u00b7 all paid"}`;
+  }
+
+  function renderAttendance(container, c) {
+    const key = attendanceKey(c);
+    const entry = getAttendance(c);
+    const isOpen = openAttendance.has(key);
+
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "attendance-toggle";
+    toggle.setAttribute("aria-expanded", String(isOpen));
+    toggle.textContent = `${isOpen ? "\u25be" : "\u25b8"} ${attendanceSummary(entry)}`;
+    toggle.addEventListener("click", () => {
+      if (openAttendance.has(key)) openAttendance.delete(key);
+      else openAttendance.add(key);
+      render();
+    });
+    container.appendChild(toggle);
+    if (!isOpen) return;
+
+    const panel = document.createElement("div");
+    panel.className = "attendance-panel";
+
+    const buyerName = entry.buyer === "me" ? "you" : entry.buyer;
+    const rows = [{ name: "me", label: "You", paid: entry.mePaid, removable: false }].concat(
+      entry.people.map((p) => ({ name: p.name, label: p.name, paid: Boolean(p.paid), removable: true }))
+    );
+
+    const list = document.createElement("ul");
+    list.className = "attendance-list";
+    for (const row of rows) {
+      const li = document.createElement("li");
+      li.className = "attendance-person";
+      const isBuyer = row.name === entry.buyer;
+      li.innerHTML = `
+        <span class="attendance-name">${escapeHtml(row.label)}</span>
+        ${
+          isBuyer
+            ? '<span class="attendance-buyer-tag">Bought tickets</span>'
+            : `<label class="attendance-paid"><input type="checkbox" ${row.paid ? "checked" : ""} /> Paid ${escapeHtml(buyerName)} back</label>`
+        }
+        ${row.removable ? `<button type="button" class="attendance-remove" title="Remove ${escapeHtml(row.label)}" aria-label="Remove ${escapeHtml(row.label)}">&times;</button>` : ""}
+      `;
+
+      const checkbox = li.querySelector('input[type="checkbox"]');
+      if (checkbox) {
+        checkbox.addEventListener("change", () => {
+          if (row.name === "me") {
+            saveAttendance(c, { ...entry, mePaid: checkbox.checked });
+          } else {
+            const people = entry.people.map((p) => (p.name === row.name ? { ...p, paid: checkbox.checked } : p));
+            saveAttendance(c, { ...entry, people });
+          }
+        });
+      }
+
+      const removeBtn = li.querySelector(".attendance-remove");
+      if (removeBtn) {
+        removeBtn.addEventListener("click", () => {
+          const people = entry.people.filter((p) => p.name !== row.name);
+          if (entry.buyer !== row.name) {
+            saveAttendance(c, { ...entry, people });
+          } else {
+            // The buyer left, so tickets fall back to you and the old
+            // paid-back checkmarks no longer mean anything.
+            saveAttendance(c, { people: people.map((p) => ({ ...p, paid: false })), buyer: "me", mePaid: false });
+          }
+        });
+      }
+
+      list.appendChild(li);
+    }
+    panel.appendChild(list);
+
+    if (entry.people.length > 0) {
+      const buyerRow = document.createElement("label");
+      buyerRow.className = "attendance-buyer";
+      buyerRow.textContent = "Who bought the tickets? ";
+      const select = document.createElement("select");
+      for (const row of rows) {
+        const opt = document.createElement("option");
+        opt.value = row.name;
+        opt.textContent = row.label;
+        if (row.name === entry.buyer) opt.selected = true;
+        select.appendChild(opt);
+      }
+      select.addEventListener("change", () => {
+        // Paid-back checkmarks are relative to the old buyer, so start fresh.
+        const people = entry.people.map((p) => ({ ...p, paid: false }));
+        saveAttendance(c, { ...entry, buyer: select.value, people, mePaid: false });
+      });
+      buyerRow.appendChild(select);
+      panel.appendChild(buyerRow);
+    }
+
+    const form = document.createElement("form");
+    form.className = "attendance-add";
+    form.innerHTML = `
+      <input type="text" placeholder="Add a friend&rsquo;s name" aria-label="Friend&rsquo;s name" maxlength="60" />
+      <button type="submit" class="add-toggle">Add</button>
+    `;
+    const input = form.querySelector("input");
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = input.value.trim();
+      if (!name) return;
+      const taken = name.toLowerCase() === "me" || name.toLowerCase() === "you" ||
+        entry.people.some((p) => p.name.toLowerCase() === name.toLowerCase());
+      if (taken) {
+        input.setCustomValidity("That person is already on the list.");
+        input.reportValidity();
+        return;
+      }
+      saveAttendance(c, { ...entry, people: [...entry.people, { name, paid: false }] });
+      // render() rebuilt the card; put the cursor back for adding the next name.
+      const fresh = document.querySelector(`.attendance-add[data-key="${CSS.escape(key)}"] input`);
+      if (fresh) fresh.focus();
+    });
+    input.addEventListener("input", () => input.setCustomValidity(""));
+    form.dataset.key = key;
+    panel.appendChild(form);
+
+    container.appendChild(panel);
   }
 
   function setupAddForm() {
