@@ -55,4 +55,11 @@ const CONCERTS = [
     address: "3017 Southeast Milwaukie Avenue, Portland, OR",
     source: "Etix purchase (Order #465444584)",
   },
+  {
+    artist: "Conversations with Nick Cave",
+    date: "2027-04-12T19:30:00-07:00",
+    venue: "Arlene Schnitzer Concert Hall",
+    address: "1037 Southwest Broadway, Portland, OR",
+    source: "Portland'5 purchase (Order TS-340346962)",
+  },
 ];
