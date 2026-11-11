@@ -43,6 +43,12 @@ Your API key is saved as you type — no need to click away from the field first
 
 Click **+ Add manually** at the top of the page and fill in the artist, date, time, venue, and (optionally) address. Enter the time as Pacific time — that's the time zone all the venues Claude found are in. Manually added and searched-and-added concerts show an **×** button so you can remove them; baked-in concerts (the ones Claude found in Gmail/Calendar) can only be removed by asking Claude to edit `js/data.js`.
 
+### Who's going
+
+Each concert card has a **Who's going** toggle. Open it to add friends who are coming, pick who bought the tickets (you or one of them), and check off who has paid the buyer back. The toggle shows a count, e.g. "Who's going · 3 · 1 owes". Changing the buyer, or removing them, clears the paid-back checkmarks, since they were owed to the old buyer.
+
+This lives in the signed-in-only `appData/private` doc (field `attendance`), not `appData/state`, so attendee names and who owes whom never show up on the public share page. It works for baked-in concerts too.
+
 ### Sharing your list
 
 `share.html` (e.g. `https://concerts.christinedippold.com/share.html`) is a public, read-only, no-sign-in-required page that shows the same concert list — artist, date, and venue only — for sharing with friends. It updates live as you add or remove shows. It intentionally does not show your Ticketmaster API key or let visitors add/remove anything.
